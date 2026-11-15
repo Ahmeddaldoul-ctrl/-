@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة مغامرة الألغاز الذكية الكبرى</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b, #0f172a, #020617);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-box {
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.35);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between p-4 min-h-screen">
+
+    <!-- رأس التطبيق -->
+    <header class="w-full max-w-2xl flex justify-between items-center py-4 px-2 border-b border-slate-800">
+        <div class="flex items-center space-x-3 space-x-reverse">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-black text-2xl shadow-lg">🧠</div>
+            <div>
+                <h1 class="font-black text-sm md:text-base text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400" id="uiTitle">مغامرة الألغاز الذكية</h1>
+                <p class="text-xs text-slate-400" id="uiSubtitle">2800 مرحلة وتحدٍ ذهني</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 space-x-reverse">
+            <button onclick="toggleMusic()" id="musicBtn" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl text-xs transition border border-slate-700">🎵 تشغيل الموسيقى</button>
+            <button onclick="openSettings()" class="bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-xs transition border border-slate-700">⚙️</button>
+            <button onclick="goHome()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl text-xs transition hidden border border-slate-700" id="homeBtn">🏠 القائمة</button>
+        </div>
+    </header>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="w-full max-w-xl flex-grow flex flex-col items-center justify-center py-6">
+
+        <!-- 0. شاشة إدخال الاسم أولاً -->
+        <div id="screenNameEntry" class="w-full flex flex-col items-center text-center space-y-6">
+            <div class="w-28 h-28 bg-gradient-to-tr from-indigo-500 to-pink-500 rounded-3xl flex items-center justify-center text-6xl shadow-2xl mb-2 animate-bounce">👋</div>
+            <h2 class="text-3xl font-black text-white" id="lblNameTitle">أهلاً بك في عالم الألغاز</h2>
+            <p class="text-slate-300 text-sm max-w-md" id="lblNameDesc">يرجى كتابة اسمك الكريم لنبدأ هذه الرحلة الممتعة عبر الأقسام الأربعة:</p>
+            <div class="w-full max-w-md space-y-3">
+                <input type="text" id="playerNameInput" placeholder="اكتب اسمك هنا..." class="w-full bg-slate-800/90 border border-slate-700 text-white px-4 py-3.5 rounded-2xl text-center font-bold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button onclick="savePlayerName()" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-2xl font-bold text-base shadow-lg transition" id="btnStartGame">دخول اللعبة 🚀</button>
+            </div>
+        </div>
+
+        <!-- 1. شاشة القائمة الرئيسية -->
+        <div id="screenHome" class="w-full flex flex-col items-center text-center space-y-5 hidden">
+            <div class="w-24 h-24 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-3xl flex items-center justify-center text-5xl shadow-2xl mb-1">🧩</div>
+            <h2 id="welcomeGreeting" class="text-2xl md:text-3xl font-black text-white">مرحباً بالبطل</h2>
+            <p class="text-slate-300 text-xs md:text-sm max-w-md" id="lblHomeDesc">اختر أحد الأقسام الأربعة أدناه للاستمتاع بـ 700 مرحلة لكل قسم مع تسجيل الأوقات والنتائج!</p>
+
+            <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                <button onclick="selectCategory('logic')" class="py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-bold text-sm shadow-lg transition flex items-center justify-between border border-blue-400/30">
+                    <span class="flex items-center gap-2" id="lblCatLogic">🧠 الألغاز المنطقية</span>
+                    <span class="text-xs bg-blue-900/60 px-2.5 py-1 rounded-full" id="progLogic">700/1</span>
+                </button>
+                <button onclick="selectCategory('crossword')" class="py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-2xl font-bold text-sm shadow-lg transition flex items-center justify-between border border-emerald-400/30">
+                    <span class="flex items-center gap-2" id="lblCatCross">📝 الكلمات المتقاطعة</span>
+                    <span class="text-xs bg-emerald-900/60 px-2.5 py-1 rounded-full" id="progCross">700/1</span>
+                </button>
+                <button onclick="selectCategory('cultural')" class="py-3 px-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 rounded-2xl font-bold text-sm shadow-lg transition flex items-center justify-between border border-amber-400/30">
+                    <span class="flex items-center gap-2" id="lblCatCult">🌍 الألغاز الثقافية</span>
+                    <span class="text-xs bg-amber-950/60 px-2.5 py-1 rounded-full" id="progCult">700/1</span>
+                </button>
+                <button onclick="selectCategory('impossible')" class="py-3 px-4 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 rounded-2xl font-bold text-sm shadow-lg transition flex items-center justify-between border border-red-400/30 glow-box">
+                    <span class="flex items-center gap-2" id="lblCatImp">🔥 النمط المستحيل</span>
+                    <span class="text-xs bg-red-950/60 px-2.5 py-1 rounded-full" id="progImp">700/1</span>
+                </button>
+            </div>
+            
+            <div class="glass-panel w-full p-3.5 rounded-2xl text-right text-xs text-slate-300 space-y-1 mt-2">
+                <p>🏆 <span id="lblTotalScore">إجمالي النقاط المسجلة</span>: <span id="totalScoreVal" class="font-bold text-amber-400">0</span></p>
+                <p>⏱️ <span id="lblBestTime">أفضل وقت مسجل</span>: <span id="bestTimeVal" class="font-bold text-emerald-400">--</span></p>
+                <p class="pt-1.5 text-indigo-300 border-t border-slate-700/50 flex justify-between items-center">
+                    <span>🎵 <span id="lblMusicTitle">الموسيقى الخلفية</span></span>
+                    <span class="text-emerald-400 font-bold" id="musicStatusLabel">هادئة وخفيفة ✨</span>
+                </p>
+            </div>
+            <button onclick="resetName()" class="text-xs text-slate-400 hover:text-indigo-400 underline pt-1" id="lblChangeName">تغيير اسم اللاعب</button>
+        </div>
+
+        <!-- 2. شاشة قائمة المراحل (700 مرحلة) -->
+        <div id="screenLevels" class="w-full flex flex-col items-center space-y-3 hidden">
+            <div class="flex justify-between w-full items-center">
+                <button onclick="goHome()" class="text-xs text-indigo-400 hover:underline" id="lblBackHome">← العودة للرئيسية</button>
+                <h3 id="modeTitleLabel" class="font-bold text-base text-indigo-300">اختر المرحلة</h3>
+                <span id="completedCountLabel" class="text-xs text-slate-400">المستوى: 1</span>
+            </div>
+            <div class="w-full bg-slate-900/60 p-2 rounded-2xl border border-slate-800 flex items-center gap-2">
+                <input type="number" id="jumpInput" min="1" max="700" placeholder="انتقل للمرحلة (1-700)..." class="bg-slate-800 text-white px-3 py-1.5 rounded-xl text-xs flex-grow focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button onclick="jumpToLevel()" class="bg-indigo-600 hover:bg-indigo-500 px-3.5 py-1.5 rounded-xl text-xs font-bold transition" id="lblJumpBtn">انتقال</button>
+            </div>
+            <div class="w-full max-h-[340px] overflow-y-auto pr-1 grid grid-cols-6 sm:grid-cols-8 gap-1.5" id="levelsGrid"></div>
+        </div>
+
+        <!-- 3. شاشة اللعب التفاعلية -->
+        <div id="screenGame" class="w-full flex flex-col items-center space-y-4 hidden">
+            <div class="w-full flex justify-between items-center glass-panel px-4 py-2.5 rounded-2xl">
+                <div>
+                    <span id="currentGameMode" class="text-xs px-2.5 py-0.5 rounded-lg font-bold">القسم</span>
+                    <h4 id="currentGameLevel" class="text-base font-black mt-0.5">المرحلة 1</h4>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="text-xs bg-slate-800/80 px-2.5 py-1 rounded-xl border border-slate-700 flex items-center gap-1">
+                        <span>⏱️</span> <span id="timerDisplay">00:00</span>
+                    </div>
+                    <button onclick="openLevelsList()" class="bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-xl text-xs transition border border-slate-700" id="lblLevelsBtn">📋 المراحل</button>
+                </div>
+            </div>
+
+            <div class="w-full glass-panel p-5 rounded-3xl text-center space-y-3 shadow-xl relative overflow-hidden">
+                <div id="puzzleCategory" class="inline-block px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-bold border border-indigo-500/30">فئة اللغز</div>
+                <h3 id="puzzleQuestion" class="text-lg sm:text-xl font-black text-white leading-relaxed min-h-[60px] flex items-center justify-center">نص اللغز...</h3>
+                
+                <div id="inputArea" class="w-full space-y-2.5 pt-1">
+                    <input type="text" id="userAnswerInput" placeholder="اكتب إجابتك هنا..." class="w-full bg-slate-800/90 border border-slate-700 text-white px-4 py-3 rounded-2xl text-center font-bold text-base focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button onclick="submitTypedAnswer()" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-2xl font-bold text-sm shadow-lg transition" id="lblSubmitBtn">تحقق من الإجابة</button>
+                </div>
+            </div>
+
+            <div id="feedbackMessage" class="text-center font-bold text-xs h-5 transition-all"></div>
+        </div>
+
+        <!-- 4. شاشة إعدادات اللغات -->
+        <div id="screenSettings" class="w-full flex flex-col items-center text-center space-y-5 hidden">
+            <h2 class="text-2xl font-black text-white" id="lblSettingsTitle">إعدادات اللغة</h2>
+            <p class="text-slate-300 text-xs" id="lblSettingsDesc">اختر لغة الواجهة المفضلة لديك:</p>
+            <div class="w-full max-w-sm space-y-2">
+                <button onclick="changeLanguage('ar')" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold text-sm border border-slate-700 transition">العربية (Arabic)</button>
+                <button onclick="changeLanguage('en')" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold text-sm border border-slate-700 transition">English (الإنجليزية)</button>
+                <button onclick="changeLanguage('fr')" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold text-sm border border-slate-700 transition">Français (الفرنسية)</button>
+            </div>
+            <button onclick="goHome()" class="mt-4 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-xs font-bold transition" id="lblCloseSettings">إغلاق وإعادة للرئيسية</button>
+        </div>
+
+    </main>
+
+    <!-- تذييل التطبيق -->
+    <footer class="w-full max-w-2xl text-center py-2 text-xs text-slate-500 border-t border-slate-900">
+        مغامرة الألغاز الذكية © 2026 - 2800 مرحلة وتوقيت
+    </footer>
+
+    <!-- نافذة تنبيه مخصصة بدلاً من alert -->
+    <div id="customToast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-slate-800 border border-indigo-500/50 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold z-50 transition-all duration-300 opacity-0 pointer-events-none"></div>
+
+    <script>
+        // ترجمات الواجهة (العربية، الإنجليزية، الفرنسية)
+        const translations = {
+            ar: {
+                title: "مغامرة الألغاز الذكية",
+                subtitle: "2800 مرحلة وتحدٍ ذهني",
+                musicOn: "🎵 إيقاف الموسيقى",
+                musicOff: "🎵 تشغيل الموسيقى",
+                homeBtn: "🏠 القائمة",
+                nameTitle: "أهلاً بك في عالم الألغاز",
+                nameDesc: "يرجى كتابة اسمك الكريم لنبدأ هذه الرحلة الممتعة عبر الأقسام الأربعة:",
+                namePlaceholder: "اكتب اسمك هنا...",
+                startBtn: "دخول اللعبة 🚀",
+                greetingPrefix: "مرحباً ",
+                homeDesc: "اختر أحد الأقسام الأربعة أدناه للاستمتاع بـ 700 مرحلة لكل قسم مع تسجيل الأوقات والنتائج!",
+                catLogic: "🧠 الألغاز المنطقية",
+                catCross: "📝 الكلمات المتقاطعة",
+                catCult: "🌍 الألغاز الثقافية",
+                catImp: "🔥 النمط المستحيل",
+                totalScore: "إجمالي النقاط المسجلة",
+                bestTime: "أفضل وقت مسجل",
+                musicTitle: "الموسيقى الخلفية",
+                musicStatus: "هادئة وخفيفة ✨",
+                changeName: "تغيير اسم اللاعب",
+                backHome: "← العودة للرئيسية",
+                chooseLevel: "اختر المرحلة",
+                levelPrefix: "المستوى: ",
+                jumpPlaceholder: "انتقل للمرحلة (1-700)...",
+                jumpBtn: "انتقال",
+                levelsBtn: "📋 المراحل",
+                stagePrefix: "المرحلة ",
+                answerPlaceholder: "اكتب إجابتك هنا...",
+                submitBtn: "تحقق من الإجابة",
+                settingsTitle: "إعدادات اللغة",
+                settingsDesc: "اختر لغة الواجهة المفضلة لديك:",
+                closeSettings: "إغلاق وإعادة للرئيسية",
+                emptyNameAlert: "الرجاء إدخال اسمك أولاً!",
+                levelLockedAlert: "هذه المرحلة مقفلة حالياً! أكمل المراحل السابقة لفتحها.",
+                correctMsg: "إجابة صحيحة! أحسنت 🎉",
+                wrongMsg: "إجابة خاطئة، حاول مرة أخرى ❌"
+            },
+            en: {
+                title: "Smart Puzzle Adventure",
+                subtitle: "2800 Stages & Brain Challenges",
+                musicOn: "🎵 Stop Music",
+                musicOff: "🎵 Play Music",
+                homeBtn: "🏠 Menu",
+                nameTitle: "Welcome to Puzzle World",
+                nameDesc: "Please enter your name to start this exciting journey across four categories:",
+                namePlaceholder: "Type your name here...",
+                startBtn: "Start Game 🚀",
+                greetingPrefix: "Welcome, ",
+                homeDesc: "Choose one of the four categories below to enjoy 700 stages each with score and time tracking!",
+                catLogic: "🧠 Logic Puzzles",
+                catCross: "📝 Crosswords",
+                catCult: "🌍 Cultural Quizzes",
+                catImp: "🔥 Impossible Mode",
+                totalScore: "Total Score",
+                bestTime: "Best Time",
+                musicTitle: "Background Music",
+                musicStatus: "Soft & Relaxing ✨",
+                changeName: "Change Player Name",
+                backHome: "← Back to Home",
+                chooseLevel: "Select Stage",
+                levelPrefix: "Unlocked: ",
+                jumpPlaceholder: "Jump to stage (1-700)...",
+                jumpBtn: "Go",
+                levelsBtn: "📋 Stages",
+                stagePrefix: "Stage ",
+                answerPlaceholder: "Type your answer here...",
+                submitBtn: "Check Answer",
+                settingsTitle: "Language Settings",
+                settingsDesc: "Select your preferred interface language:",
+                closeSettings: "Close & Return Home",
+                emptyNameAlert: "Please enter your name first!",
+                levelLockedAlert: "This stage is currently locked! Complete previous stages first.",
+                correctMsg: "Correct Answer! Well done 🎉",
+                wrongMsg: "Wrong answer, try again ❌"
+            },
+            fr: {
+                title: "Aventure des Énigmes",
+                subtitle: "2800 Niveaux et Défis",
+                musicOn: "🎵 Arrêter Musique",
+                musicOff: "🎵 Jouer Musique",
+                homeBtn: "🏠 Menu",
+                nameTitle: "Bienvenue dans les Énigmes",
+                nameDesc: "Veuillez entrer votre nom pour commencer l'aventure :",
+                namePlaceholder: "Écrivez votre nom...",
+                startBtn: "Commencer 🚀",
+                greetingPrefix: "Bienvenue, ",
+                homeDesc: "Choisissez une catégorie ci-dessous pour explorer 700 niveaux chacune !",
+                catLogic: "🧠 Énigmes Logiques",
+                catCross: "📝 Mots Croisés",
+                catCult: "🌍 Culture Générale",
+                catImp: "🔥 Mode Impossible",
+                totalScore: "Score Total",
+                bestTime: "Meilleur Temps",
+                musicTitle: "Musique de Fond",
+                musicStatus: "Douce et Calme ✨",
+                changeName: "Changer de Nom",
+                backHome: "← Retour à l'accueil",
+                chooseLevel: "Choisir le Niveau",
+                levelPrefix: "Niveau : ",
+                jumpPlaceholder: "Aller au niveau (1-700)...",
+                jumpBtn: "Aller",
+                levelsBtn: "📋 Niveaux",
+                stagePrefix: "Niveau ",
+                answerPlaceholder: "Votre réponse ici...",
+                submitBtn: "Vérifier",
+                settingsTitle: "Paramètres de Langue",
+                settingsDesc: "Choisissez votre langue préférée :",
+                closeSettings: "Fermer",
+                emptyNameAlert: "Veuillez entrer votre nom !",
+                levelLockedAlert: "Ce niveau est verrouillé !",
+                correctMsg: "Bonne réponse ! Bravo 🎉",
+                wrongMsg: "Mauvaise réponse, réessayez ❌"
+            }
+        };
+
+        // حالة اللعبة المحفوظة
+        let gameState = {
+            playerName: localStorage.getItem('smart_puzzle_player_name') || '',
+            lang: localStorage.getItem('smart_puzzle_lang') || 'ar',
+            category: 'logic',
+            currentLevel: 1,
+            progress: JSON.parse(localStorage.getItem('smart_puzzle_progress')) || {
+                logic: 1,
+                crossword: 1,
+                cultural: 1,
+                impossible: 1
+            },
+            totalScore: parseInt(localStorage.getItem('smart_puzzle_score')) || 0,
+            bestTime: localStorage.getItem('smart_puzzle_best_time') || '--',
+            musicPlaying: false,
+            timerSeconds: 0,
+            timerInterval: null,
+            currentAnswer: ''
+        };
+
+        // تهيئة التطبيق عند التحميل
+        window.onload = function() {
+            applyLanguage(gameState.lang);
+            if (gameState.playerName) {
+                updateHomeStats();
+                showScreen('screenHome');
+            } else {
+                showScreen('screenNameEntry');
+            }
+
+            // السماح بالإرسال عبر زر Enter
+            document.getElementById('playerNameInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') savePlayerName();
+            });
+            document.getElementById('userAnswerInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') submitTypedAnswer();
+            });
+        };
+
+        // إدارة الشاشات
+        function showScreen(screenId) {
+            const screens = ['screenNameEntry', 'screenHome', 'screenLevels', 'screenGame', 'screenSettings'];
+            screens.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+
+            const homeBtn = document.getElementById('homeBtn');
+            if (screenId === 'screenNameEntry' || screenId === 'screenHome') {
+                homeBtn.classList.add('hidden');
+            } else {
+                homeBtn.classList.remove('hidden');
+            }
+
+            if (screenId !== 'screenGame') {
+                stopTimer();
+            }
+        }
+
+        function goHome() {
+            updateHomeStats();
+            showScreen('screenHome');
+        }
+
+        function openSettings() {
+            showScreen('screenSettings');
+        }
+
+        // حفظ وتغيير اسم اللاعب
+        function savePlayerName() {
+            const input = document.getElementById('playerNameInput').value.trim();
+            const t = translations[gameState.lang];
+            if (!input) {
+                showToast(t.emptyNameAlert);
+                return;
+            }
+            gameState.playerName = input;
+            localStorage.setItem('smart_puzzle_player_name', input);
+            updateHomeStats();
+            showScreen('screenHome');
+        }
+
+        function resetName() {
+            document.getElementById('playerNameInput').value = gameState.playerName;
+            showScreen('screenNameEntry');
+        }
+
+        // تحديث الإحصائيات والترحيب في القائمة الرئيسية
+        function updateHomeStats() {
+            const t = translations[gameState.lang];
+            document.getElementById('welcomeGreeting').innerText = t.greetingPrefix + gameState.playerName;
+            document.getElementById('progLogic').innerText = `700/${gameState.progress.logic}`;
+            document.getElementById('progCross').innerText = `700/${gameState.progress.crossword}`;
+            document.getElementById('progCult').innerText = `700/${gameState.progress.cultural}`;
+            document.getElementById('progImp').innerText = `700/${gameState.progress.impossible}`;
+            document.getElementById('totalScoreVal').innerText = gameState.totalScore;
+            document.getElementById('bestTimeVal').innerText = gameState.bestTime;
+        }
+
+        // تغيير اللغة وتطبيق الاتجاه
+        function changeLanguage(lang) {
+            gameState.lang = lang;
+            localStorage.setItem('smart_puzzle_lang', lang);
+            applyLanguage(lang);
+            goHome();
+        }
+
+        function applyLanguage(lang) {
+            const t = translations[lang];
+            document.documentElement.lang = lang;
+            document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+
+            document.getElementById('uiTitle').innerText = t.title;
+            document.getElementById('uiSubtitle').innerText = t.subtitle;
+            document.getElementById('musicBtn').innerText = gameState.musicPlaying ? t.musicOn : t.musicOff;
+            document.getElementById('homeBtn').innerText = t.homeBtn;
+            document.getElementById('lblNameTitle').innerText = t.nameTitle;
+            document.getElementById('lblNameDesc').innerText = t.nameDesc;
+            document.getElementById('playerNameInput').placeholder = t.namePlaceholder;
+            document.getElementById('btnStartGame').innerText = t.startBtn;
+            document.getElementById('lblHomeDesc').innerText = t.homeDesc;
+            document.getElementById('lblCatLogic').innerText = t.catLogic;
+            document.getElementById('lblCatCross').innerText = t.catCross;
+            document.getElementById('lblCatCult').innerText = t.catCult;
+            document.getElementById('lblCatImp').innerText = t.catImp;
+            document.getElementById('lblTotalScore').innerText = t.totalScore;
+            document.getElementById('lblBestTime').innerText = t.bestTime;
+            document.getElementById('lblMusicTitle').innerText = t.musicTitle;
+            document.getElementById('musicStatusLabel').innerText = t.musicStatus;
+            document.getElementById('lblChangeName').innerText = t.changeName;
+            document.getElementById('lblBackHome').innerText = t.backHome;
+            document.getElementById('modeTitleLabel').innerText = t.chooseLevel;
+            document.getElementById('jumpInput').placeholder = t.jumpPlaceholder;
+            document.getElementById('lblJumpBtn').innerText = t.jumpBtn;
+            document.getElementById('lblLevelsBtn').innerText = t.levelsBtn;
+            document.getElementById('userAnswerInput').placeholder = t.answerPlaceholder;
+            document.getElementById('lblSubmitBtn').innerText = t.submitBtn;
+            document.getElementById('lblSettingsTitle').innerText = t.settingsTitle;
+            document.getElementById('lblSettingsDesc').innerText = t.settingsDesc;
+            document.getElementById('lblCloseSettings').innerText = t.closeSettings;
+
+            if (gameState.playerName) {
+                document.getElementById('welcomeGreeting').innerText = t.greetingPrefix + gameState.playerName;
+            }
+        }
+
+        // اختيار القسم وعرض الـ 700 مرحلة
+        function selectCategory(cat) {
+            gameState.category = cat;
+            openLevelsList();
+        }
+
+        function openLevelsList() {
+            const t = translations[gameState.lang];
+            const catNames = {
+                logic: t.catLogic,
+                crossword: t.catCross,
+                cultural: t.catCult,
+                impossible: t.catImp
+            };
+            const maxUnlocked = gameState.progress[gameState.category];
+            document.getElementById('modeTitleLabel').innerText = catNames[gameState.category];
+            document.getElementById('completedCountLabel').innerText = t.levelPrefix + maxUnlocked;
+
+            const grid = document.getElementById('levelsGrid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= 700; i++) {
+                const btn = document.createElement('button');
+                const isUnlocked = i <= maxUnlocked;
+                const isCurrent = i === maxUnlocked;
+
+                btn.innerText = i;
+                btn.className = `py-2 rounded-xl text-xs font-bold transition ${
+                    isCurrent
+                        ? 'bg-indigo-600 text-white ring-2 ring-indigo-300 shadow-md'
+                        : isUnlocked
+                        ? 'bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700'
+                        : 'bg-slate-900/60 text-slate-600 cursor-not-allowed border border-slate-800/50'
+                }`;
+
+                if (isUnlocked) {
+                    btn.onclick = () => startLevel(i);
+                } else {
+                    btn.onclick = () => showToast(t.levelLockedAlert);
+                }
+                grid.appendChild(btn);
+            }
+
+            showScreen('screenLevels');
+        }
+
+        function jumpToLevel() {
+            const val = parseInt(document.getElementById('jumpInput').value);
+            const maxUnlocked = gameState.progress[gameState.category];
+            const t = translations[gameState.lang];
+            if (val >= 1 && val <= 700) {
+                if (val <= maxUnlocked) {
+                    startLevel(val);
+                } else {
+                    showToast(t.levelLockedAlert);
+                }
+            }
+        }
+
+        // توليد الألغاز ديناميكياً لجميع الـ 2800 مرحلة (700 لكل قسم)
+        function generatePuzzle(cat, lvl) {
+            const lang = gameState.lang;
+
+            if (cat === 'logic') {
+                const a = (lvl * 3) + 4;
+                const b = (lvl * 2) + 5;
+                if (lvl % 3 === 1) {
+                    return {
+                        badge: lang === 'ar' ? 'تسلسل رقمي' : (lang === 'fr' ? 'Suite Logique' : 'Number Sequence'),
+                        question: lang === 'ar'
+                            ? `أكمل المتتالية المنطقية: ${a} ، ${a + b} ، ${a + 2 * b} ، ( ؟ )`
+                            : (lang === 'fr' ? `Complétez la suite : ${a}, ${a + b}, ${a + 2 * b}, (?)` : `Complete the sequence: ${a}, ${a + b}, ${a + 2 * b}, (?)`),
+                        answer: String(a + 3 * b)
+                    };
+                } else if (lvl % 3 === 2) {
+                    const x = lvl + 6;
+                    return {
+                        badge: lang === 'ar' ? 'معادلة ذكية' : (lang === 'fr' ? 'Équation' : 'Smart Equation'),
+                        question: lang === 'ar'
+                            ? `إذا كان (س × 2) + 4 = ${x * 2 + 4}، فما هي قيمة س؟`
+                            : (lang === 'fr' ? `Si (X × 2) + 4 = ${x * 2 + 4}, quelle est la valeur de X ?` : `If (X × 2) + 4 = ${x * 2 + 4}, what is X?`),
+                        answer: String(x)
+                    };
+                } else {
+                    const base = lvl + 10;
+                    return {
+                        badge: lang === 'ar' ? 'لغز حسابي' : (lang === 'fr' ? 'Calcul' : 'Math Riddle'),
+                        question: lang === 'ar'
+                            ? `ما هو العدد الذي إذا أضفت إليه نصفه أصبح الناتج ${base * 3}؟`
+                            : (lang === 'fr' ? `Quel nombre ajouté à sa moitié donne ${base * 3} ?` : `Which number added to its half equals ${base * 3}?`),
+                        answer: String(base * 2)
+                    };
+                }
+            }
+
+            if (cat === 'crossword') {
+                const wordsPool = [
+                    { ar: 'قمر', en: 'MOON', fr: 'LUNE', hintAr: 'جرم سماوي يضيء السماء ليلاً (3 حروف)', hintEn: 'Shines in the night sky (4 letters)', hintFr: 'Brille dans le ciel la nuit (4 lettres)' },
+                    { ar: 'شمس', en: 'SUN', fr: 'SOLEIL', hintAr: 'نجم يمد الأرض بالضوء والحرارة (3 حروف)', hintEn: 'Star that gives Earth light and heat (3 letters)', hintFr: 'Étoile qui éclaire la Terre (6 lettres)' },
+                    { ar: 'نحلة', en: 'BEE', fr: 'ABEILLE', hintAr: 'حشرة نشيطة تصنع العسل (4 حروف)', hintEn: 'Insect that makes honey (3 letters)', hintFr: 'Insecte qui fabrique le miel (7 lettres)' },
+                    { ar: 'كتاب', en: 'BOOK', fr: 'LIVRE', hintAr: 'صديق صامت مليء بالمعرفة (4 حروف)', hintEn: 'Full of pages and knowledge (4 letters)', hintFr: 'Plein de pages et de savoir (5 lettres)' },
+                    { ar: 'أسد', en: 'LION', fr: 'LION', hintAr: 'حيوان يُلقب بملك الغابة (3 حروف)', hintEn: 'King of the jungle (4 letters)', hintFr: 'Roi de la jungle (4 lettres)' },
+                    { ar: 'بحر', en: 'SEA', fr: 'MER', hintAr: 'مسطح مائي كبير ومالح (3 حروف)', hintEn: 'Large body of salt water (3 letters)', hintFr: 'Grande étendue d’eau salée (3 lettres)' },
+                    { ar: 'نخلة', en: 'PALM', fr: 'PALMIER', hintAr: 'شجرة صحراوية تعطينا التمر (4 حروف)', hintEn: 'Desert tree that gives dates (4 letters)', hintFr: 'Arbre du désert (7 lettres)' }
+                ];
+                const item = wordsPool[(lvl - 1) % wordsPool.length];
+                return {
+                    badge: lang === 'ar' ? `كلمات متقاطعة #${lvl}` : (lang === 'fr' ? `Mots Croisés #${lvl}` : `Crossword #${lvl}`),
+                    question: lang === 'ar' ? item.hintAr : (lang === 'fr' ? item.hintFr : item.hintEn),
+                    answer: lang === 'ar' ? item.ar : (lang === 'fr' ? item.fr : item.en)
+                };
+            }
+
+            if (cat === 'cultural') {
+                const culturePool = [
+                    { ar: '7', en: '7', fr: '7', qAr: 'كم عدد ألوان قوس قزح؟', qEn: 'How many colors are in a rainbow?', qFr: 'Combien de couleurs y a-t-il dans un arc-en-ciel ?' },
+                    { ar: 'عطارد', en: 'MERCURY', fr: 'MERCURE', qAr: 'ما هو أقرب كوكب إلى الشمس؟', qEn: 'Which planet is closest to the Sun?', qFr: 'Quelle est la planète la plus proche du Soleil ?' },
+                    { ar: '6', en: '6', fr: '6', qAr: 'كم عدد أرجل النملة؟', qEn: 'How many legs does an ant have?', qFr: 'Combien de pattes a une fourmi ?' },
+                    { ar: 'الزرافة', en: 'GIRAFFE', fr: 'GIRAFE', qAr: 'ما هو أطول حيوان بري في العالم؟', qEn: 'What is the tallest land animal?', qFr: 'Quel est le plus grand animal terrestre ?' },
+                    { ar: '365', en: '365', fr: '365', qAr: 'كم يوماً في السنة البسيطة؟', qEn: 'How many days are in a common year?', qFr: 'Combien de jours dans une année normale ?' },
+                    { ar: 'الهادئ', en: 'PACIFIC', fr: 'PACIFIQUE', qAr: 'ما هو أكبر محيط في العالم؟ (اكتب الاسم مثل: الهادئ)', qEn: 'What is the largest ocean on Earth?', qFr: 'Quel est le plus grand océan du monde ?' }
+                ];
+                const item = culturePool[(lvl - 1) % culturePool.length];
+                return {
+                    badge: lang === 'ar' ? `ثقافة عامة #${lvl}` : (lang === 'fr' ? `Culture #${lvl}` : `Trivia #${lvl}`),
+                    question: lang === 'ar' ? item.qAr : (lang === 'fr' ? item.qFr : item.qEn),
+                    answer: lang === 'ar' ? item.ar : (lang === 'fr' ? item.fr : item.en)
+                };
+            }
+
+            // النمط المستحيل
+            const n1 = lvl + 11;
+            const n2 = (lvl % 9) + 7;
+            const ans = (n1 * n2) - lvl;
+            return {
+                badge: lang === 'ar' ? `تحدي مستحيل #${lvl}` : (lang === 'fr' ? `Défi Impossible #${lvl}` : `Impossible #${lvl}`),
+                question: lang === 'ar'
+                    ? `احسب بدقة: (${n1} × ${n2}) - ${lvl} = ؟`
+                    : (lang === 'fr' ? `Calculez : (${n1} × ${n2}) - ${lvl} = ?` : `Calculate: (${n1} × ${n2}) - ${lvl} = ?`),
+                answer: String(ans)
+            };
+        }
+
+        // بدء مرحلة محددة
+        function startLevel(lvl) {
+            gameState.currentLevel = lvl;
+            const t = translations[gameState.lang];
+            const catNames = {
+                logic: t.catLogic,
+                crossword: t.catCross,
+                cultural: t.catCult,
+                impossible: t.catImp
+            };
+
+            const puzzle = generatePuzzle(gameState.category, lvl);
+            gameState.currentAnswer = puzzle.answer;
+
+            document.getElementById('currentGameMode').innerText = catNames[gameState.category];
+            document.getElementById('currentGameLevel').innerText = t.stagePrefix + lvl;
+            document.getElementById('puzzleCategory').innerText = puzzle.badge;
+            document.getElementById('puzzleQuestion').innerText = puzzle.question;
+            document.getElementById('userAnswerInput').value = '';
+            document.getElementById('feedbackMessage').innerText = '';
+
+            showScreen('screenGame');
+            startTimer();
+            document.getElementById('userAnswerInput').focus();
+        }
+
+        // التحقق من إجابة اللاعب
+        function submitTypedAnswer() {
+            const t = translations[gameState.lang];
+            const userVal = document.getElementById('userAnswerInput').value.trim().toUpperCase();
+            const correctVal = gameState.currentAnswer.trim().toUpperCase();
+
+            // تطبيع الهمزات في اللغة العربية لتسهيل الإدخال
+            const normalizeAr = (str) => str.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه');
+
+            if (userVal === correctVal || normalizeAr(userVal) === normalizeAr(correctVal)) {
+                stopTimer();
+                showFeedback(t.correctMsg, 'text-emerald-400');
+
+                // احتساب النقاط وحفظ أفضل وقت
+                const points = gameState.category === 'impossible' ? 25 : 10;
+                gameState.totalScore += points;
+                localStorage.setItem('smart_puzzle_score', gameState.totalScore);
+
+                const formattedTime = formatTime(gameState.timerSeconds);
+                if (gameState.bestTime === '--' || gameState.timerSeconds < parseTime(gameState.bestTime)) {
+                    gameState.bestTime = formattedTime;
+                    localStorage.setItem('smart_puzzle_best_time', formattedTime);
+                }
+
+                // فتح المرحلة التالية
+                if (gameState.currentLevel === gameState.progress[gameState.category] && gameState.currentLevel < 700) {
+                    gameState.progress[gameState.category]++;
+                    localStorage.setItem('smart_puzzle_progress', JSON.stringify(gameState.progress));
+                }
+
+                setTimeout(() => {
+                    if (gameState.currentLevel < 700) {
+                        startLevel(gameState.currentLevel + 1);
+                    } else {
+                        showToast(`تهانينا يا ${gameState.playerName}! أتممت جميع مراحل هذا القسم بنجاح تام!`);
+                        goHome();
+                    }
+                }, 1000);
+            } else {
+                showFeedback(t.wrongMsg, 'text-rose-400');
+            }
+        }
+
+        function showFeedback(msg, colorClass) {
+            const el = document.getElementById('feedbackMessage');
+            el.className = `text-center font-bold text-xs h-5 transition-all ${colorClass}`;
+            el.innerText = msg;
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('customToast');
+            toast.innerText = msg;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 3000);
+        }
+
+        // إدارة المؤقت (Timer)
+        function startTimer() {
+            stopTimer();
+            gameState.timerSeconds = 0;
+            document.getElementById('timerDisplay').innerText = '00:00';
+            gameState.timerInterval = setInterval(() => {
+                gameState.timerSeconds++;
+                document.getElementById('timerDisplay').innerText = formatTime(gameState.timerSeconds);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerInterval = null;
+            }
+        }
+
+        function formatTime(secs) {
+            const m = Math.floor(secs / 60).toString().padStart(2, '0');
+            const s = (secs % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function parseTime(str) {
+            const parts = str.split(':');
+            if (parts.length !== 2) return Infinity;
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
+
+        // نظام توليد موسيقى خفيفة وهادئة مدمج (Web Audio API)
+        let audioCtx = null;
+        let musicInterval = null;
+
+        function playSoftNote(freq, duration) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.04, audioCtx.currentTime + 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function toggleMusic() {
+            const t = translations[gameState.lang];
+            if (!gameState.musicPlaying) {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const melody = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 440.00, 392.00];
+                let step = 0;
+
+                playSoftNote(melody[0], 2.5);
+                musicInterval = setInterval(() => {
+                    step = (step + 1) % melody.length;
+                    playSoftNote(melody[step], 2.5);
+                }, 1400);
+
+                gameState.musicPlaying = true;
+                document.getElementById('musicBtn').innerText = t.musicOn;
+            } else {
+                clearInterval(musicInterval);
+                musicInterval = null;
+                gameState.musicPlaying = false;
+                document.getElementById('musicBtn').innerText = t.musicOff;
+            }
+        }
+    </script>
+</body>
+</html>
