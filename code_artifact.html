@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مغامرة الألغاز الذكية - لعبة عائلية</title>
+    <!-- استيراد خط تجوال العربي الجميل والمناسب للأطفال والعائلة -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;800;900&display=swap" rel="stylesheet">
+    <!-- مكتبة Tailwind CSS للتصميم المتجاوب -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- مكتبة Tone.js لتوليد المؤثرات الصوتية دون الحاجة لملفات خارجية -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- مكتبة Canvas Confetti للاحتفال بالفوز -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #ff758c 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* تأثيرات الأزرار ثلاثية الأبعاد المبهجة */
+        .btn-3d {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
+        }
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        /* حركة نبض لطيفة للشعار */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* حركة اهتزاز عند الإجابة الخاطئة */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* حركة ظهور البطاقات */
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.85) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-pop {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* تنسيق خلفية الفقاعات العائمة */
+        .bubble {
+            position: fixed;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-3 sm:p-6 relative">
+
+    <!-- فقاعات ديكورية في الخلفية -->
+    <div class="bubble w-32 h-32 top-10 right-10"></div>
+    <div class="bubble w-48 h-48 bottom-10 left-10"></div>
+    <div class="bubble w-24 h-24 top-1/2 left-1/4"></div>
+
+    <!-- الحاوية الرئيسية للتطبيق -->
+    <main class="w-full max-w-2xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-4 border-white/60 overflow-hidden z-10 relative">
+        
+        <!-- الشريط العلوي (النقاط، الصوت، العودة) -->
+        <header id="game-header" class="hidden bg-gradient-to-l from-indigo-600 via-purple-600 to-pink-500 text-white p-4 flex items-center justify-between shadow-md">
+            <button onclick="goHome()" class="bg-white/20 hover:bg-white/30 px-3 py-2 rounded-2xl font-bold text-sm sm:text-base flex items-center gap-1 transition">
+                <span>🏠</span>
+                <span class="hidden sm:inline">الرئيسية</span>
+            </button>
+
+            <div class="flex items-center gap-2 sm:gap-4">
+                <!-- عداد النقاط -->
+                <div class="bg-amber-400 text-amber-950 px-4 py-1.5 rounded-full font-black text-base sm:text-lg flex items-center gap-1.5 shadow-inner">
+                    <span>⭐</span>
+                    <span id="score-display">0</span>
+                </div>
+                <!-- عداد القلوب/المحاولات -->
+                <div class="bg-rose-500/80 px-3 py-1.5 rounded-full font-bold text-sm sm:text-base flex items-center gap-1">
+                    <span>❤️</span>
+                    <span id="streak-display">0</span>
+                </div>
+            </div>
+
+            <!-- زر كتم/تشغيل الصوت -->
+            <button id="sound-toggle" onclick="toggleSound()" class="bg-white/20 hover:bg-white/30 w-10 h-10 rounded-full flex items-center justify-center text-xl transition" title="تبديل الصوت">
+                🔊
+            </button>
+        </header>
+
+        <!-- 1. شاشة البداية واختيار القسم -->
+        <section id="home-screen" class="p-6 sm:p-10 text-center animate-pop">
+            <div class="inline-block bg-gradient-to-tr from-amber-300 to-yellow-500 p-5 rounded-3xl shadow-lg mb-4 animate-float">
+                <span class="text-5xl sm:text-6xl">🧩</span>
+            </div>
+            
+            <h1 class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 mb-2">
+                مغامرة الألغاز الذكية
+            </h1>
+            <p class="text-gray-600 text-base sm:text-lg font-medium mb-6">
+                اختر عالمك المفضل واختبر ذكاءك مع العائلة!
+            </p>
+
+            <!-- إجمالي النقاط المحفوظة -->
+            <div class="inline-flex items-center gap-2 bg-indigo-50 border-2 border-indigo-200 px-5 py-2 rounded-full mb-8">
+                <span class="text-xl">🏆</span>
+                <span class="text-indigo-900 font-bold">رصيد نجومك:</span>
+                <span id="home-total-score" class="text-indigo-600 font-black text-xl">0</span>
+            </div>
+
+            <!-- شبكة اختيار الأقسام الأربعة -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-right">
+                <!-- قسم الألغاز المنطقية -->
+                <button onclick="startCategory('logic')" class="btn-3d group bg-gradient-to-br from-blue-500 to-cyan-500 text-white p-5 rounded-2xl flex items-center gap-4 hover:brightness-105">
+                    <div class="bg-white/25 w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition">
+                        🧠
+                    </div>
+                    <div>
+                        <h3 class="font-black text-xl">ألغاز منطقية</h3>
+                        <p class="text-blue-100 text-sm">فكّر بذكاء واكتشف الخدعة</p>
+                    </div>
+                </button>
+
+                <!-- قسم الكلمات المتقاطعة المبسطة (تركيب الكلمات) -->
+                <button onclick="startCategory('words')" class="btn-3d group bg-gradient-to-br from-emerald-500 to-teal-500 text-white p-5 rounded-2xl flex items-center gap-4 hover:brightness-105">
+                    <div class="bg-white/25 w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition">
+                        🔤
+                    </div>
+                    <div>
+                        <h3 class="font-black text-xl">كلمات متقاطعة</h3>
+                        <p class="text-emerald-100 text-sm">رتّب الحروف واكشف الكلمة</p>
+                    </div>
+                </button>
+
+                <!-- قسم الألغاز الرياضية -->
+                <button onclick="startCategory('math')" class="btn-3d group bg-gradient-to-br from-amber-500 to-orange-500 text-white p-5 rounded-2xl flex items-center gap-4 hover:brightness-105">
+                    <div class="bg-white/25 w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition">
+                        🔢
+                    </div>
+                    <div>
+                        <h3 class="font-black text-xl">ألغاز رياضية</h3>
+                        <p class="text-amber-100 text-sm">أرقام وأنماط ممتعة وسريعة</p>
+                    </div>
+                </button>
+
+                <!-- قسم الألغاز الثقافية -->
+                <button onclick="startCategory('culture')" class="btn-3d group bg-gradient-to-br from-purple-500 to-pink-500 text-white p-5 rounded-2xl flex items-center gap-4 hover:brightness-105">
+                    <div class="bg-white/25 w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition">
+                        🌍
+                    </div>
+                    <div>
+                        <h3 class="font-black text-xl">ألغاز ثقافية</h3>
+                        <p class="text-purple-100 text-sm">معلومات شيّقة حول العالم</p>
+                    </div>
+                </button>
+            </div>
+
+            <!-- زر التحدي الشامل المختلط -->
+            <button onclick="startCategory('mixed')" class="btn-3d mt-5 w-full bg-gradient-to-r from-rose-500 via-fuchsia-600 to-indigo-600 text-white py-4 px-6 rounded-2xl font-black text-lg sm:text-xl flex items-center justify-center gap-3 hover:brightness-105">
+                <span>🚀</span>
+                <span>التحدي العائلي الشامل (كل الألغاز)</span>
+            </button>
+        </section>
+
+        <!-- 2. شاشة اللعب التفاعلية -->
+        <section id="play-screen" class="hidden p-5 sm:p-8">
+            <!-- شريط التقدم واسم المرحلة -->
+            <div class="flex items-center justify-between mb-2 text-sm font-bold text-gray-500">
+                <span id="category-badge" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full">ألغاز منطقية</span>
+                <span id="progress-text">اللغز 1 من 5</span>
+            </div>
+            <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden mb-6">
+                <div id="progress-bar" class="bg-gradient-to-r from-green-400 to-emerald-500 h-full rounded-full transition-all duration-500" style="width: 20%"></div>
+            </div>
+
+            <!-- بطاقة اللغز -->
+            <div id="puzzle-card" class="bg-gradient-to-b from-indigo-50/80 to-purple-50/80 border-2 border-indigo-100 rounded-3xl p-6 text-center mb-6 shadow-sm">
+                <div id="puzzle-emoji" class="text-5xl sm:text-6xl mb-4 animate-float">🤔</div>
+                <h2 id="puzzle-question" class="text-xl sm:text-2xl font-extrabold text-gray-800 leading-relaxed">
+                    هنا يظهر نص اللغز...
+                </h2>
+                
+                <!-- صندوق التلميح (يظهر عند طلبه) -->
+                <div id="hint-box" class="hidden mt-4 bg-amber-100 border-2 border-amber-300 text-amber-900 px-4 py-2.5 rounded-2xl text-sm sm:text-base font-bold animate-pop">
+                    💡 تلميح: <span id="hint-text"></span>
+                </div>
+            </div>
+
+            <!-- منطقة الإجابة (تتغير ديناميكياً حسب نوع اللغز: خيارات متعددة أو حروف متقاطعة) -->
+            <div id="answer-area" class="mb-6">
+                <!-- يتم ملؤها عبر الجافاسكربت -->
+            </div>
+
+            <!-- رسالة التغذية الراجعة (صح أو خطأ) -->
+            <div id="feedback-banner" class="hidden mb-4 p-3 rounded-2xl text-center font-bold text-lg animate-pop"></div>
+
+            <!-- أزرار المساعدة السفلية -->
+            <div class="flex items-center justify-between gap-3 pt-2 border-t border-gray-100">
+                <button id="hint-btn" onclick="useHint()" class="btn-3d bg-amber-400 hover:bg-amber-500 text-amber-950 font-extrabold py-3 px-5 rounded-2xl flex items-center gap-2 text-sm sm:text-base">
+                    <span>💡</span>
+                    <span>تلميح (-5 ⭐)</span>
+                </button>
+
+                <button id="skip-btn" onclick="skipQuestion()" class="text-gray-400 hover:text-gray-600 font-bold py-2 px-4 rounded-xl text-sm transition">
+                    تخطي اللغز ⏭️
+                </button>
+            </div>
+        </section>
+
+        <!-- 3. شاشة النتيجة والاحتفال -->
+        <section id="result-screen" class="hidden p-8 text-center animate-pop">
+            <div class="text-7xl mb-4 animate-bounce">🎉</div>
+            <h2 class="text-3xl sm:text-4xl font-black text-indigo-700 mb-2">أحسنت يا بطل!</h2>
+            <p id="result-message" class="text-gray-600 text-lg font-medium mb-6">لقد أنهيت هذه المرحلة بنجاح باهر!</p>
+
+            <div class="bg-gradient-to-br from-amber-100 to-yellow-200 border-2 border-amber-300 rounded-3xl p-6 max-w-sm mx-auto mb-8 shadow-inner">
+                <p class="text-amber-900 font-bold text-sm mb-1">النقاط المكتسبة في هذه الجولة</p>
+                <div class="text-5xl font-black text-amber-600 flex items-center justify-center gap-2">
+                    <span>⭐</span>
+                    <span id="round-score">0</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <button onclick="restartCurrentCategory()" class="btn-3d bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black py-3.5 px-8 rounded-2xl text-lg">
+                    🔄 العب مجدداً
+                </button>
+                <button onclick="goHome()" class="btn-3d bg-indigo-600 text-white font-black py-3.5 px-8 rounded-2xl text-lg">
+                    🏠 اختر قسماً آخر
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // ==========================================
+        // 1. قاعدة بيانات الألغاز المتنوعة للأطفال والعائلة
+        // ==========================================
+        const puzzlesDatabase = {
+            logic: [
+                {
+                    type: 'choice',
+                    emoji: '🕰️',
+                    question: 'شيء له عقارب ولكن لا يلدغ، وله وجه ولكن لا يبتسم، فما هو؟',
+                    options: ['الساعة', 'العقرب', 'المرآة', 'البوصلة'],
+                    answer: 'الساعة',
+                    hint: 'ننظر إليه لنعرف موعد الذهاب للمدرسة أو النوم.'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🔑',
+                    question: 'له أسنان كثيرة ولكنه لا يعض أبداً، نستخدمه كل يوم عند الخروج والعودة، ما هو؟',
+                    options: ['المشط', 'المفتاح', 'المنشار', 'التمساح'],
+                    answer: 'المفتاح',
+                    hint: 'نضعه في قفل الباب لنفتحه.'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🌧️',
+                    question: 'ما هو الشيء الذي كلما زاد نقص؟',
+                    options: ['العمر', 'المال', 'المطر', 'الشجر'],
+                    answer: 'العمر',
+                    hint: 'يكبر رقم سنواتك كل عام، فتقترب من الكبر!'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🧽',
+                    question: 'شيء مليء بالثقوب من كل مكان، ومع ذلك يحتفظ بالماء بداخله، فما هو؟',
+                    options: ['الإسفنجة', 'المصفاة', 'الدلو', 'السحابة'],
+                    answer: 'الإسفنجة',
+                    hint: 'نستخدمها في غسل الأطباق أو الاستحمام.'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🕯️',
+                    question: 'أكون طويلة عندما أكون صغيرة، وأصبح قصيرة عندما أكبر، فمن أنا؟',
+                    options: ['الشمعة', 'الزرافة', 'الشجرة', 'المسطرة'],
+                    answer: 'الشمعة',
+                    hint: 'تضيء لنا الغرفة وتذوب مع الوقت.'
+                }
+            ],
+            words: [
+                {
+                    type: 'word',
+                    emoji: '🦁',
+                    question: 'كلمات متقاطعة: حيوان مفترس يُلقب بـ "ملك الغابة" (3 حروف)',
+                    word: 'اسد',
+                    scrambled: ['د', 'س', 'أ', 'م', 'ر', 'ن'],
+                    displayChars: ['أ', 'س', 'د'],
+                    hint: 'صوته يسمى الزئير وله شعر كثيف حول رأسه.'
+                },
+                {
+                    type: 'word',
+                    emoji: '🌙',
+                    question: 'كلمات متقاطعة: جرم سماوي يضيء السماء ليلاً ويدور حول الأرض (3 حروف)',
+                    word: 'قمر',
+                    scrambled: ['ر', 'م', 'ق', 'ش', 'س', 'ن'],
+                    displayChars: ['ق', 'م', 'ر'],
+                    hint: 'يظهر بدراً في منتصف الشهر الهجري.'
+                },
+                {
+                    type: 'word',
+                    emoji: '🍯',
+                    question: 'كلمات متقاطعة: حشرة نشيطة تصنع لنا العسل اللذيذ (4 حروف)',
+                    word: 'نحلة',
+                    scrambled: ['ة', 'ل', 'ح', 'ن', 'ف', 'ر'],
+                    displayChars: ['ن', 'ح', 'ل', 'ة'],
+                    hint: 'تتنقل بين الأزهار وتعيش في خلية.'
+                },
+                {
+                    type: 'word',
+                    emoji: '🌴',
+                    question: 'كلمات متقاطعة: شجرة مباركة تُعرف بـ "عمة الإنسان" وتعطينا التمر (4 حروف)',
+                    word: 'نخلة',
+                    scrambled: ['ل', 'خ', 'ة', 'ن', 'ت', 'ف'],
+                    displayChars: ['ن', 'خ', 'ل', 'ة'],
+                    hint: 'تشتهر بها الواحات والصحاري العربية.'
+                },
+                {
+                    type: 'word',
+                    emoji: '📚',
+                    question: 'كلمات متقاطعة: صديق صامت يجمع القصص والمعلومات بين أوراقه (4 حروف)',
+                    word: 'كتاب',
+                    scrambled: ['ب', 'ا', 'ت', 'ك', 'ق', 'ل'],
+                    displayChars: ['ك', 'ت', 'ا', 'ب'],
+                    hint: 'نقرأ فيه لنتعلم أشياء جديدة.'
+                }
+            ],
+            math: [
+                {
+                    type: 'choice',
+                    emoji: '🍎',
+                    question: 'لدى سارة 5 تفاحات، أعطاها أخوها 3 تفاحات، ثم أكلت تفاحتين. كم تفاحة بقيت معها؟',
+                    options: ['6 تفاحات', '8 تفاحات', '5 تفاحات', '4 تفاحات'],
+                    answer: '6 تفاحات',
+                    hint: 'اجمع 5 + 3 أولاً، ثم اطرح 2 من الناتج.'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🔢',
+                    question: 'أكمل النمط التالي: 2 ، 4 ، 6 ، 8 ، ( ... )',
+                    options: ['10', '9', '12', '11'],
+                    answer: '10',
+                    hint: 'نضيف رقم 2 في كل خطوة (أعداد زوجية).'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🚗',
+                    question: 'إذا كان للسيارة الواحدة 4 عجلات، فكم عجلة لـ 3 سيارات؟',
+                    options: ['12 عجلة', '7 عجلات', '10 عجلات', '16 عجلة'],
+                    answer: '12 عجلة',
+                    hint: 'اجمع 4 + 4 + 4 أو اضرب 4 × 3.'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🎈',
+                    question: 'ما هو نصف العدد 20 مضافاً إليه 5؟',
+                    options: ['15', '10', '25', '12'],
+                    answer: '15',
+                    hint: 'نصف العشرين هو 10، أضف إليها 5.'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🔺',
+                    question: 'كم عدد أضلاع المثلث والمربع معاً؟',
+                    options: ['7 أضلاع', '6 أضلاع', '8 أضلاع', '5 أضلاع'],
+                    answer: '7 أضلاع',
+                    hint: 'المثلث له 3 أضلاع والمربع له 4 أضلاع.'
+                }
+            ],
+            culture: [
+                {
+                    type: 'choice',
+                    emoji: '🦒',
+                    question: 'ما هو أطول حيوان بري في العالم؟',
+                    options: ['الزرافة', 'الفيل', 'الجمل', 'الحصان'],
+                    answer: 'الزرافة',
+                    hint: 'تتميز برقبتها الطويلة جداً لتأكل أوراق الأشجار العالية.'
+                },
+                {
+                    type: 'choice',
+                    emoji: '☀️',
+                    question: 'ما هو أقرب كوكب إلى الشمس في مجموعتنا الشمسية؟',
+                    options: ['عطارد', 'الأرض', 'المريخ', 'زحل'],
+                    answer: 'عطارد',
+                    hint: 'هو أصغر كواكب المجموعة الشمسية وأقربها للشمس.'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🌈',
+                    question: 'كم عدد ألوان قوس قزح الذي يظهر في السماء بعد المطر؟',
+                    options: ['7 ألوان', '5 ألوان', '6 ألوان', '8 ألوان'],
+                    answer: '7 ألوان',
+                    hint: 'تبدأ بالأحمر وتنتهي بالبنفسجي، وعددها مثل أيام الأسبوع.'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🐝',
+                    question: 'كم عدد أرجل النحلة أو النملة (الحشرات عموماً)؟',
+                    options: ['6 أرجل', '8 أرجل', '4 أرجل', '10 أرجل'],
+                    answer: '6 أرجل',
+                    hint: 'جميع الحشرات تمتلك 3 أزواج من الأرجل.'
+                },
+                {
+                    type: 'choice',
+                    emoji: '🌊',
+                    question: 'ما هو أكبر محيط في العالم؟',
+                    options: ['المحيط الهادئ', 'المحيط الأطلسي', 'المحيط الهندي', 'البحر الأحمر'],
+                    answer: 'المحيط الهادئ',
+                    hint: 'اسمه يدل على الهدوء والسكينة.'
+                }
+            ]
+        };
+
+        // ==========================================
+        // 2. حالة اللعبة والمتغيرات العامة
+        // ==========================================
+        let totalScore = parseInt(localStorage.getItem('puzzleGameScore')) || 0;
+        let roundScore = 0;
+        let streak = 0;
+        let currentCategory = '';
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let hintUsed = false;
+        let soundEnabled = true;
+        let isAnswering = false;
+
+        // متغيرات خاصة بلعبة الكلمات المتقاطعة (تركيب الحروف)
+        let selectedWordLetters = [];
+
+        // تحديث النقاط في الشاشة الرئيسية عند التحميل
+        document.getElementById('home-total-score').textContent = totalScore;
+
+        // ==========================================
+        // 3. نظام المؤثرات الصوتية باستخدام Tone.js
+        // ==========================================
+        let synth = null;
+
+        function initAudio() {
+            if (!synth && typeof Tone !== 'undefined') {
+                synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                synth.volume.value = -8;
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const now = Tone.now();
+                if (type === 'click') {
+                    synth.triggerAttackRelease('C5', '32n', now);
+                } else if (type === 'correct') {
+                    synth.triggerAttackRelease('C5', '16n', now);
+                    synth.triggerAttackRelease('E5', '16n', now + 0.1);
+                    synth.triggerAttackRelease('G5', '8n', now + 0.2);
+                } else if (type === 'wrong') {
+                    synth.triggerAttackRelease('E3', '16n', now);
+                    synth.triggerAttackRelease('C3', '8n', now + 0.12);
+                } else if (type === 'win') {
+                    synth.triggerAttackRelease('C5', '16n', now);
+                    synth.triggerAttackRelease('E5', '16n', now + 0.12);
+                    synth.triggerAttackRelease('G5', '16n', now + 0.24);
+                    synth.triggerAttackRelease('C6', '4n', now + 0.36);
+                } else if (type === 'hint') {
+                    synth.triggerAttackRelease('A5', '16n', now);
+                }
+            } catch (e) {
+                console.log('Audio not supported yet');
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-toggle').textContent = soundEnabled ? '🔊' : '🔇';
+        }
+
+        // ==========================================
+        // 4. التنقل بين الشاشات وإدارة المراحل
+        // ==========================================
+        const categoryNames = {
+            logic: '🧠 ألغاز منطقية',
+            words: '🔤 كلمات متقاطعة',
+            math: '🔢 ألغاز رياضية',
+            culture: '🌍 ألغاز ثقافية',
+            mixed: '🚀 التحدي العائلي الشامل'
+        };
+
+        function startCategory(cat) {
+            playSound('click');
+            currentCategory = cat;
+            roundScore = 0;
+            streak = 0;
+            currentIndex = 0;
+
+            // تجهيز الأسئلة وخلطها عشوائياً
+            if (cat === 'mixed') {
+                const all = [
+                    ...puzzlesDatabase.logic,
+                    ...puzzlesDatabase.words,
+                    ...puzzlesDatabase.math,
+                    ...puzzlesDatabase.culture
+                ];
+                currentQuestions = shuffleArray(all).slice(0, 8);
+            } else {
+                currentQuestions = shuffleArray([...puzzlesDatabase[cat]]);
+            }
+
+            // تحديث الواجهة
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('play-screen').classList.remove('hidden');
+            document.getElementById('game-header').classList.remove('hidden');
+
+            document.getElementById('category-badge').textContent = categoryNames[cat];
+            updateStatsUI();
+            loadQuestion();
+        }
+
+        function goHome() {
+            playSound('click');
+            document.getElementById('play-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-header').classList.add('hidden');
+            document.getElementById('home-screen').classList.remove('hidden');
+            document.getElementById('home-total-score').textContent = totalScore;
+        }
+
+        function restartCurrentCategory() {
+            startCategory(currentCategory);
+        }
+
+        function updateStatsUI() {
+            document.getElementById('score-display').textContent = totalScore;
+            document.getElementById('streak-display').textContent = streak;
+        }
+
+        // ==========================================
+        // 5. عرض اللغز والتفاعل معه
+        // ==========================================
+        function loadQuestion() {
+            isAnswering = false;
+            hintUsed = false;
+            const q = currentQuestions[currentIndex];
+
+            // تحديث شريط التقدم
+            const total = currentQuestions.length;
+            document.getElementById('progress-text').textContent = `اللغز ${currentIndex + 1} من ${total}`;
+            document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / total) * 100}%`;
+
+            // تحديث نص اللغز والرمز
+            document.getElementById('puzzle-emoji').textContent = q.emoji;
+            document.getElementById('puzzle-question').textContent = q.question;
+
+            // إخفاء التلميح ورسالة النتيجة
+            document.getElementById('hint-box').classList.add('hidden');
+            document.getElementById('feedback-banner').classList.add('hidden');
+            document.getElementById('hint-btn').disabled = false;
+            document.getElementById('hint-btn').classList.remove('opacity-50');
+
+            // بناء منطقة الإجابة حسب نوع اللغز
+            const answerArea = document.getElementById('answer-area');
+            answerArea.innerHTML = '';
+
+            if (q.type === 'choice') {
+                renderChoicePuzzle(q, answerArea);
+            } else if (q.type === 'word') {
+                renderWordPuzzle(q, answerArea);
+            }
+        }
+
+        // عرض ألغاز الخيارات المتعددة
+        function renderChoicePuzzle(q, container) {
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3.5';
+
+            const shuffledOptions = shuffleArray([...q.options]);
+            const colors = [
+                'from-indigo-500 to-blue-600',
+                'from-purple-500 to-fuchsia-600',
+                'from-teal-500 to-emerald-600',
+                'from-pink-500 to-rose-600'
+            ];
+
+            shuffledOptions.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `btn-3d bg-gradient-to-r ${colors[idx % colors.length]} text-white font-extrabold text-lg sm:text-xl py-4 px-5 rounded-2xl shadow-md hover:brightness-110 transition`;
+                btn.textContent = opt;
+                btn.onclick = () => checkChoiceAnswer(opt, q.answer, btn);
+                grid.appendChild(btn);
+            });
+
+            container.appendChild(grid);
+        }
+
+        // عرض ألغاز الكلمات المتقاطعة المبسطة (تركيب الحروف)
+        function renderWordPuzzle(q, container) {
+            selectedWordLetters = [];
+            const targetLength = q.displayChars.length;
+
+            // مربعات الكلمة الفارغة (تشبه شبكة الكلمات المتقاطعة)
+            const slotsContainer = document.createElement('div');
+            slotsContainer.id = 'word-slots';
+            slotsContainer.className = 'flex justify-center gap-2 sm:gap-3 mb-6';
+
+            for (let i = 0; i < targetLength; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'w-14 h-14 sm:w-16 sm:h-16 bg-white border-4 border-indigo-300 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl font-black text-indigo-800 shadow-inner transition-all';
+                slot.id = `slot-${i}`;
+                slotsContainer.appendChild(slot);
+            }
+            container.appendChild(slotsContainer);
+
+            // لوحة الحروف المبعثرة للاختيار منها
+            const lettersPool = document.createElement('div');
+            lettersPool.className = 'flex flex-wrap justify-center gap-2.5 sm:gap-3 mb-4';
+
+            const letters = shuffleArray([...q.scrambled]);
+            letters.forEach((char, idx) => {
+                const charBtn = document.createElement('button');
+                charBtn.id = `char-btn-${idx}`;
+                charBtn.className = 'btn-3d w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-b from-amber-300 to-amber-400 text-amber-950 font-black text-xl sm:text-2xl rounded-2xl hover:brightness-105';
+                charBtn.textContent = char;
+                charBtn.onclick = () => selectLetter(char, charBtn, q);
+                lettersPool.appendChild(charBtn);
+            });
+            container.appendChild(lettersPool);
+
+            // زر مسح الحروف لإعادة المحاولة
+            const clearWrap = document.createElement('div');
+            clearWrap.className = 'text-center';
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'text-sm font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 px-4 py-1.5 rounded-xl transition';
+            clearBtn.innerHTML = '🧹 مسح الحروف';
+            clearBtn.onclick = () => resetWordSlots(q);
+            clearWrap.appendChild(clearBtn);
+            container.appendChild(clearWrap);
+        }
+
+        function selectLetter(char, btnElement, q) {
+            if (isAnswering) return;
+            const targetLength = q.displayChars.length;
+            if (selectedWordLetters.length >= targetLength) return;
+
+            playSound('click');
+            selectedWordLetters.push({ char, btnId: btnElement.id });
+            btnElement.disabled = true;
+            btnElement.classList.add('opacity-30', 'scale-90');
+
+            // تحديث المربعات
+            const currentSlot = document.getElementById(`slot-${selectedWordLetters.length - 1}`);
+            currentSlot.textContent = char;
+            currentSlot.classList.replace('border-indigo-300', 'border-indigo-600');
+            currentSlot.classList.add('bg-indigo-50');
+
+            // التحقق التلقائي عند اكتمال الحروف
+            if (selectedWordLetters.length === targetLength) {
+                const formedWord = selectedWordLetters.map(item => item.char).join('');
+                const targetWord = q.displayChars.join('');
+                if (formedWord === targetWord) {
+                    handleCorrectAnswer();
+                } else {
+                    handleWrongWord(q);
+                }
+            }
+        }
+
+        function resetWordSlots(q) {
+            if (isAnswering) return;
+            playSound('click');
+            selectedWordLetters.forEach(item => {
+                const btn = document.getElementById(item.btnId);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-30', 'scale-90');
+                }
+            });
+            selectedWordLetters = [];
+            for (let i = 0; i < q.displayChars.length; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                slot.textContent = '';
+                slot.classList.replace('border-indigo-600', 'border-indigo-300');
+                slot.classList.remove('bg-indigo-50', 'border-rose-500', 'bg-rose-50');
+            }
+        }
+
+        function handleWrongWord(q) {
+            playSound('wrong');
+            const slotsBox = document.getElementById('word-slots');
+            slotsBox.classList.add('animate-shake');
+            for (let i = 0; i < q.displayChars.length; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                slot.classList.replace('border-indigo-600', 'border-rose-500');
+                slot.classList.add('bg-rose-50');
+            }
+            showFeedback('حاول مرة أخرى! ترتيب الحروف غير صحيح ❌', 'error');
+            setTimeout(() => {
+                slotsBox.classList.remove('animate-shake');
+                resetWordSlots(q);
+            }, 900);
+        }
+
+        // التحقق من إجابة الخيارات المتعددة
+        function checkChoiceAnswer(selected, correct, btnElement) {
+            if (isAnswering) return;
+
+            if (selected === correct) {
+                btnElement.className = 'btn-3d bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-lg sm:text-xl py-4 px-5 rounded-2xl ring-4 ring-green-300';
+                handleCorrectAnswer();
+            } else {
+                playSound('wrong');
+                streak = 0;
+                updateStatsUI();
+                btnElement.classList.add('animate-shake', 'opacity-60');
+                btnElement.disabled = true;
+                showFeedback('إجابة غير صحيحة، جرّب خياراً آخر! 💪', 'error');
+                setTimeout(() => btnElement.classList.remove('animate-shake'), 500);
+            }
+        }
+
+        // معالجة الإجابة الصحيحة
+        function handleCorrectAnswer() {
+            isAnswering = true;
+            playSound('correct');
+
+            // احتساب النقاط (10 نقاط أساسية + مكافأة التتابع)
+            const earned = 10 + (streak * 2);
+            totalScore += earned;
+            roundScore += earned;
+            streak++;
+
+            // حفظ النقاط في ذاكرة المتصفح
+            localStorage.setItem('puzzleGameScore', totalScore);
+            updateStatsUI();
+
+            // إطلاق قصاصات احتفالية صغيرة
+            if (typeof confetti !== 'undefined') {
+                confetti({
+                    particleCount: 45,
+                    spread: 60,
+                    origin: { y: 0.7 }
+                });
+            }
+
+            showFeedback(`إجابة رائعة! +${earned} نقطة 🌟`, 'success');
+
+            // الانتقال للغز التالي بعد لحظات
+            setTimeout(() => {
+                currentIndex++;
+                if (currentIndex < currentQuestions.length) {
+                    loadQuestion();
+                } else {
+                    finishRound();
+                }
+            }, 1400);
+        }
+
+        // نظام التلميحات
+        function useHint() {
+            if (hintUsed || isAnswering) return;
+            
+            if (totalScore >= 5) {
+                totalScore -= 5;
+                localStorage.setItem('puzzleGameScore', totalScore);
+                updateStatsUI();
+            }
+
+            playSound('hint');
+            hintUsed = true;
+            const q = currentQuestions[currentIndex];
+            document.getElementById('hint-text').textContent = q.hint;
+            document.getElementById('hint-box').classList.remove('hidden');
+
+            const hintBtn = document.getElementById('hint-btn');
+            hintBtn.disabled = true;
+            hintBtn.classList.add('opacity-50');
+        }
+
+        // تخطي اللغز
+        function skipQuestion() {
+            if (isAnswering) return;
+            playSound('click');
+            streak = 0;
+            updateStatsUI();
+            currentIndex++;
+            if (currentIndex < currentQuestions.length) {
+                loadQuestion();
+            } else {
+                finishRound();
+            }
+        }
+
+        // عرض رسالة التغذية الراجعة
+        function showFeedback(msg, type) {
+            const banner = document.getElementById('feedback-banner');
+            banner.textContent = msg;
+            banner.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-rose-100', 'text-rose-800');
+            if (type === 'success') {
+                banner.classList.add('bg-green-100', 'text-green-800');
+            } else {
+                banner.classList.add('bg-rose-100', 'text-rose-800');
+            }
+        }
+
+        // إنهاء الجولة والاحتفال الكبير
+        function finishRound() {
+            playSound('win');
+            document.getElementById('play-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('round-score').textContent = roundScore;
+
+            if (typeof confetti !== 'undefined') {
+                confetti({
+                    particleCount: 120,
+                    spread: 90,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        // دالة مساعدة لخلط المصفوفات عشوائياً
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+    </script>
+</body>
+</html>
